@@ -21,6 +21,7 @@ Or install it yourself as:
 ## Usage
 
 For now it will automatically do the precompilation for your. You can monkey-patch the `ActionView::Template#compile!` method to see if it works like:
+(I know this is a very bad practice. I am finding a more convenient way for showing the result.)
 
 ```ruby
 module ActionView
@@ -29,6 +30,7 @@ module ActionView
       puts "Template: #{virtual_path} compiled? #{@compiled}"
 
       return if @compiled
+      .........
     end
   end
 end
