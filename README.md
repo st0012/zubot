@@ -22,7 +22,7 @@ Or install it yourself as:
 
 For now it will automatically do the precompilation for your. You can monkey-patch the `ActionView::Template#compile!` method to see if it works like:
 
-```
+```ruby
 module ActionView
   class Template
     def compile!(view)
@@ -56,12 +56,10 @@ Template: kaminari/_first_page compiled? true
 And after you visit a page (say `posts/1`) You will see
 
 ```
-......
   Rendering posts/show.html.erb within layouts/application
 Template: posts/show compiled? true
   Rendered posts/show.html.erb within layouts/application (8.4ms)
 Template: layouts/application compiled? true
-......
 
 ```
 
