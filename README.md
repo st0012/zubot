@@ -1,8 +1,6 @@
 # Zubot
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/zubot`. To experiment with that code, run `bin/console` for an interactive prompt.
-
-TODO: Delete this and the text above, and describe your gem
+Zubot precompiles every templates under your application and rails enginge's app/views folder into ruby code during boot time. The benefit and reason of doing this can be found  [here](https://github.com/railsgsoc/ideas/wiki/2016-Ideas#eager-load-action-view-templates).
 
 ## Installation
 
@@ -22,7 +20,51 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+For now it will automatically do the precompilation for your. You can monkey-patch the `ActionView::Template#compile!` method to see if it works like:
+
+```
+module ActionView
+  class Template
+    def compile!(view)
+      puts "Template: #{virtual_path} compiled? #{@compiled}"
+
+      return if @compiled
+    end
+  end
+end
+```
+
+You should see something like this during boot time:
+
+```
+# I will fix the duplicated compilation issue later
+Template: layouts/application compiled? false
+Template: layouts/mailer compiled? false
+Template: layouts/mailer compiled? false
+Template: posts/_form compiled? false
+Template: posts/edit compiled? false
+Template: posts/index compiled? false
+Template: posts/index compiled? false
+Template: posts/new compiled? false
+Template: posts/show compiled? false
+Template: posts/show compiled? false
+Template: kaminari/_first_page compiled? false
+Template: kaminari/_first_page compiled? true
+Template: kaminari/_first_page compiled? true
+```
+
+And after you visit a page (say `posts/1`) You will see
+
+```
+......
+  Rendering posts/show.html.erb within layouts/application
+Template: posts/show compiled? true
+  Rendered posts/show.html.erb within layouts/application (8.4ms)
+Template: layouts/application compiled? true
+......
+
+```
+
 
 ## Development
 
