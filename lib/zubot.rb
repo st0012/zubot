@@ -6,42 +6,51 @@ require "zubot/actionview/template"
 
 module Zubot
   class TemplatePrecompiler
-   attr_reader :app, :finder
+   attr_reader :app
 
     def initialize(app)
       @app = app
+      @compiled_count = 0
     end
 
     def compile_templates!
-      precompiled_count = 0
-
       view_paths.each do |resolver|
         resolver_path = resolver.instance_variable_get(:@path)
-        paths = Dir.glob("#{resolver_path}/**/*.*")
-        paths.map do |template_path|
-          name = get_name(template_path)
-          prefix = get_prefix(template_path)
-          partial = name.start_with?("_")
-          format = get_format(template_path)
-          locals = []
-
-          name.sub!(/\_/, "") if partial
-          details = make_details(format)
-          key = details_key.get(details)
-          templates = resolver.find_all(name, prefix, partial, details, key, locals)
+        template_paths = Dir.glob("#{resolver_path}/**/*.*")
+        template_paths.map do |template_path|
+          templates = resolver.find_all(*template_args(template_path))
 
           # Basically contains only one template.
           templates.each do |template|
             template.send(:compile!, view)
-            precompiled_count += 1
+            @compiled_count += 1
           end if templates.present?
         end
       end
 
-      puts "Precompiled count #{precompiled_count}"
+      display_compiled_status
     end
 
     private
+
+    def display_compiled_status
+      puts "Precompiled count #{@compiled_count}" if Zubot.debug_mode
+    end
+
+    def template_args(template_path)
+      splited_path = template_path.split("/")
+      name = splited_path.last.split(".").first
+      prefix = splited_path[-2]
+      partial = name.start_with?("_")
+      name.sub!(/\_/, "") if partial
+
+      format = splited_path.last.split(".").second.to_sym
+      details = make_details(format)
+
+      key = details_key.get(details)
+      locals = []
+      [name, prefix, partial, details, key, locals]
+    end
 
     def view_paths
       ActionController::Base._view_paths
@@ -63,18 +72,6 @@ module Zubot
       details = raw_details
       details[:formats] = [format]
       details
-    end
-
-    def get_name(template_path)
-      template_path.split("/").last.split(".").first
-    end
-
-    def get_prefix(template_path)
-      template_path.split("/")[-2]
-    end
-
-    def get_format(template_path)
-      template_path.split("/").last.split(".").second.to_sym
     end
   end
 end
