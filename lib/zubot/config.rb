@@ -3,5 +3,5 @@ module Zubot
     attr_accessor :debug_mode
   end
 
-  self.debug_mode = true
+  self.debug_mode = Rails.env.development?
 end
