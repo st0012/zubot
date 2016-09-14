@@ -1,5 +1,8 @@
 require "zubot/version"
 require "zubot/engine"
+require "zubot/config"
+require "zubot/helpers"
+require "zubot/actionview/template"
 
 module Zubot
   class TemplatePrecompiler
@@ -75,4 +78,3 @@ module Zubot
     end
   end
 end
-
