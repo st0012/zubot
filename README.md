@@ -20,51 +20,37 @@ Or install it yourself as:
 
 ## Usage
 
-For now it will automatically do the precompilation for your. You can monkey-patch the `ActionView::Template#compile!` method to see if it works like:
-(I know this is a very bad practice. I am finding a more convenient way for showing the result.)
+For now it will automatically do the precompilation for your. (If you are in development environment, you need to set `config.consider_all_requests_local = false`)
+
+And You can use configuration to choose if you want to print the result by put this in `config/initializers/zubot.rb`: 
 
 ```ruby
-module ActionView
-  class Template
-    def compile!(view)
-      puts "Template: #{virtual_path} compiled? #{@compiled}"
-
-      return if @compiled
-      .........
-    end
-  end
-end
+Zubot.debug_mode = true
 ```
 
-You should see something like this during boot time:
+You should see belows in boot time (I will fix the duplicated compilation issue later):
 
 ```
-# I will fix the duplicated compilation issue later
-Template: layouts/application compiled? false
-Template: layouts/mailer compiled? false
-Template: layouts/mailer compiled? false
-Template: posts/_form compiled? false
-Template: posts/edit compiled? false
-Template: posts/index compiled? false
-Template: posts/index compiled? false
-Template: posts/new compiled? false
-Template: posts/show compiled? false
-Template: posts/show compiled? false
-Template: kaminari/_first_page compiled? false
-Template: kaminari/_first_page compiled? true
-Template: kaminari/_first_page compiled? true
+Template: layouts/application, formats: [:html] compiled? false
+Template: layouts/mailer, formats: [:html] compiled? false
+Template: layouts/mailer, formats: [:text] compiled? false
+Template: posts/_form, formats: [:html] compiled? false
+Template: posts/edit, formats: [:html] compiled? false
+Template: posts/index, formats: [:html] compiled? false
+Template: posts/index, formats: [:json] compiled? false
+Template: posts/new, formats: [:html] compiled? false
+Template: posts/show, formats: [:html] compiled? false
+Template: posts/show, formats: [:json] compiled? false
 ```
 
-And after you visit a page (say `posts/1`) You will see
+And after you visit a page (say posts/1), you will see:
 
 ```
   Rendering posts/show.html.erb within layouts/application
-Template: posts/show compiled? true
-  Rendered posts/show.html.erb within layouts/application (8.4ms)
-Template: layouts/application compiled? true
-
+Template: posts/show, formats: [:html] compiled? true
+  Rendered posts/show.html.erb within layouts/application (4.9ms)
+Template: layouts/application, formats: [:html] compiled? true
 ```
-
 
 ## Development
 
