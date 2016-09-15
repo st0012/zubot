@@ -6,10 +6,9 @@ require "zubot/actionview/template"
 
 module Zubot
   class TemplatePrecompiler
-   attr_reader :app
+    attr_reader :compiled_count
 
-    def initialize(app)
-      @app = app
+    def initialize
       @compiled_count = 0
     end
 
@@ -44,7 +43,7 @@ module Zubot
       partial = name.start_with?("_")
       name.sub!(/\_/, "") if partial
 
-      format = splited_path.last.split(".").second.to_sym
+      format = splited_path.last.split(".")[1].to_sym
       details = make_details(format)
 
       key = details_key.get(details)
