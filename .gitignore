@@ -8,3 +8,5 @@
 /spec/reports/
 /tmp/
 *.gem
+/spec/host_app/log
+/spec/host_app/tmp

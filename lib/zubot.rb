@@ -16,8 +16,13 @@ module Zubot
       view_paths.each do |resolver|
         resolver_path = resolver.instance_variable_get(:@path)
         template_paths = Dir.glob("#{resolver_path}/**/*.*")
-        template_paths.map do |template_path|
-          templates = resolver.find_all(*template_args(template_path))
+        template_paths.each do |template_path|
+          name, prefix, partial, details, key, local = template_args(template_path)
+
+          handler = get_handler(template_path)
+          next unless handler.in?(details[:handlers])
+
+          templates = resolver.find_all(name, prefix, partial, details, key, local)
 
           # Basically contains only one template.
           templates.each do |template|
@@ -34,6 +39,10 @@ module Zubot
 
     def display_compiled_status
       puts "Precompiled count #{@compiled_count}" if Zubot.debug_mode
+    end
+
+    def get_handler(template_path)
+      template_path.split("/").last.split(".").last.to_sym
     end
 
     def template_args(template_path)
