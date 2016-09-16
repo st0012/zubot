@@ -17,22 +17,25 @@ module Zubot
         resolver_path = resolver.instance_variable_get(:@path)
         template_paths = Dir.glob("#{resolver_path}/**/*.*")
         template_paths.each do |template_path|
-          name, prefix, partial, details, key, local = template_args(template_path)
-
-          handler = get_handler(template_path)
-          next unless handler.in?(details[:handlers])
-
-          templates = resolver.find_all(name, prefix, partial, details, key, local)
-
-          # Basically contains only one template.
-          templates.each do |template|
-            template.send(:compile!, view)
-            @compiled_count += 1
-          end if templates.present?
+          compile_template(template_path, resolver)
         end
       end
 
       display_compiled_status
+    end
+
+    def compile_template(template_path, resolver)
+      name, prefix, partial, details, key, local = template_args(template_path)
+
+      handler = get_handler(template_path)
+      return unless handler.in?(details[:handlers])
+
+      templates = resolver.find_all(name, prefix, partial, details, key, local)
+
+      # Basically contains only one template.
+      templates.each do |template|
+        @compiled_count += 1 if template.send(:compile!, view)
+      end if templates.present?
     end
 
     private

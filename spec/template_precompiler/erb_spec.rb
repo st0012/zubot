@@ -1,6 +1,10 @@
 require "spec_helper"
 
 describe Zubot::TemplatePrecompiler do
+  before do
+    allow(subject).to receive(:view_paths) { view_paths }
+  end
+
   describe "#compile_templates!" do
     before do
       allow(subject).to receive(:view_paths) { view_paths }
@@ -9,12 +13,27 @@ describe Zubot::TemplatePrecompiler do
     it "compiles one template" do
       subject.compile_templates!
 
-      expect(subject.compiled_count).to eq(1)
+      expect(subject.compiled_count).to eq(2)
+    end
+  end
+
+  describe "#compile_template" do
+    let(:resolver) { view_paths.first }
+    before do
+      allow(subject).to receive(:view) { ActionView::Base.new(view_paths, {}, nil, [:html]) }
+    end
+    it "compiles erb template" do
+      file_path = implicit_file_path("posts/index.html.erb")
+      subject.compile_template(file_path, resolver)
+
+      # Shouldn't be compile while rendering
+      expect_any_instance_of(ActionView::Template).not_to receive(:compile)
+      view.render(template: "index", prefixes: "posts")
     end
   end
 
   describe "#template_args" do
-    let(:template_path) { Dir.glob("#{fixture_load_path}/**/*.*").first }
+    let(:template_path) { posts_index_template_path }
 
     before do
       allow(subject).to receive(:view_paths) { view_paths }
@@ -34,22 +53,5 @@ describe Zubot::TemplatePrecompiler do
       expect(args[4]).to be_a(ActionView::LookupContext::DetailsKey)
       expect(args[5]).to eq([])
     end
-  end
-
-  def view
-    @view ||= begin
-      ActionView::Base.new(view_paths)
-    end
-  end
-
-  def view_paths
-    @view_paths ||= begin
-      path = ActionView::OptimizedFileSystemResolver.new(fixture_load_path)
-      ActionView::PathSet.new([path])
-    end
-  end
-
-  def fixture_load_path
-    File.join(File.dirname(__FILE__), "fixtures", "templates")
   end
 end
