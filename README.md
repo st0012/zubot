@@ -20,15 +20,15 @@ Or install it yourself as:
 
 ## Usage
 
-For now it will automatically do the precompilation for your. (If you are in development environment, you need to set `config.consider_all_requests_local = false`)
+For now it will automatically do the precompilation for your. But to actually cache the precompiled result you need to set `config.consider_all_requests_local = false`
 
 And You can use configuration to choose if you want to print the result by put this in `config/initializers/zubot.rb`: 
 
 ```ruby
-Zubot.debug_mode = true
+Zubot.debug_mode = true # default is true if you're in development environment
 ```
 
-You should see belows in boot time (I will fix the duplicated compilation issue later):
+You should see belows in boot time:
 
 ```
 Template: layouts/application, formats: [:html] compiled? false
@@ -51,6 +51,37 @@ Template: posts/show, formats: [:html] compiled? true
   Rendered posts/show.html.erb within layouts/application (4.9ms)
 Template: layouts/application, formats: [:html] compiled? true
 ```
+
+## Major Issues
+
+### Can't precompile partials
+We can't precompile partial with locals while boot time. The reason is that during boot time we can't know what locals would be needed to compile the template.
+For example, say we have a `edit.html.erb` like:
+
+```erb
+<h1>Editing Post</h1>
+
+<%= render 'form', post: @post %>
+```
+
+And let's take a look on `ActionView`'s template [cache mechanism](https://github.com/rails/rails/blob/master/actionview/lib/action_view/template/resolver.rb#L185):
+
+```ruby
+    def cached(key, path_info, details, locals) #:nodoc:
+      name, prefix, partial = path_info
+      locals = locals.map(&:to_s).sort!
+
+      if key
+        @cache.cache(key, name, prefix, partial, locals) do
+          decorate(yield, path_info, details, locals)
+        end
+      else
+        decorate(yield, path_info, details, locals)
+      end
+    end
+```
+
+Locals are one of the cache key. So in order to find and cache the form partial correctly, we need to tell actionview that it would have a local called `post`. But we can't know that unless we actually render this `edit` template. That means even if we precompiled partials, we can't actually use it because the cache will miss. And I think this issue can only be solved after we find a way to remove locals from template's cache key.
 
 ## Development
 
