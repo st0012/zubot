@@ -52,9 +52,11 @@ Template: posts/show, formats: [:html] compiled? true
 Template: layouts/application, formats: [:html] compiled? true
 ```
 
-## Major Issues
+# Major Issues
 
-### Can't precompile partials
+## Can't precompile partials
+
+### The Problem
 We can't precompile partial with locals while boot time. The reason is that during boot time we can't know what locals would be needed to compile the template.
 For example, say we have a `edit.html.erb` like:
 
@@ -82,6 +84,63 @@ And let's take a look on `ActionView`'s template [cache mechanism](https://githu
 ```
 
 Locals are one of the cache key. So in order to find and cache the form partial correctly, we need to tell actionview that it would have a local called `post`. But we can't know that unless we actually render this `edit` template. That means even if we precompiled partials, we can't actually use it because the cache will miss. And I think this issue can only be solved after we find a way to remove locals from template's cache key.
+
+Futhermore, the locals we get when compiling templates looks like `["post", "user"]`, which is used in [`ActionView::Template#locals_code`](https://github.com/rails/rails/blob/master/actionview/lib/action_view/template.rb#L326) to pre-define the renderence to the later `local_assigns` hash. If we don't do that, when the template actually get rendered, we would get message like `undefined method 'post'`, because Rails don't know where to get the locals.
+
+### The Solution
+
+So the requirement for an ideal solution is to remove locals from cache key (or even the entire template finding process), and make sure that Rails can still find out where to get the locals when rendering partials.
+
+And my approach is to use `method_missing`. I will monkey-patching the `ActionView::Template#compile` method's `source` part:
+
+```ruby
+  source = <<-end_src
+    def #{method_name}(local_assigns, output_buffer)
+      # Assigns local to instance variable
+      @local_assigns = local_assigns
+      
+       # Actually we might not need the locals_code here anymore
+      _old_virtual_path, @virtual_path = @virtual_path, #{@virtual_path.inspect};_old_output_buffer = @output_buffer;#{locals_code};#{code}
+    ensure
+      @virtual_path, @output_buffer = _old_virtual_path, _old_output_buffer
+    end
+    
+    def method_missing(name, *args, &block)
+      # When it hits method missing like calling `post`.
+      # Let it check the instance variable we stored first
+      if local = @local_assigns[name]
+        local
+      else
+        super
+      end
+    end
+  end_src
+```
+
+This method solves the method_missing part. So now we can change the cache-key of template object:
+```ruby
+module ActionView
+  # = Action View Resolver
+  class Resolver
+    def cached(key, path_info, details, locals) #:nodoc:
+      name, prefix, partial = path_info
+      locals = locals.map(&:to_s).sort!
+
+      if key
+        # We can remove the locals from the cache method
+        # But I just using empty array for now
+        @cache.cache(key, name, prefix, partial, []) do
+          decorate(yield, path_info, details, locals)
+        end
+      else
+        decorate(yield, path_info, details, locals)
+      end
+    end
+  end
+end
+```
+
+However, I am not sure if this approach would have a huge impact on performance since it uses `method_missing`.
 
 ## Development
 
