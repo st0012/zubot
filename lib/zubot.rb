@@ -5,6 +5,8 @@ require "zubot/helpers"
 require "action_view"
 require "zubot/actionview/template"
 require "zubot/actionview/resolver"
+require "zubot/actionview/base"
+require "zubot/kaminari/helpers/paginator"
 
 module Zubot
   class TemplatePrecompiler

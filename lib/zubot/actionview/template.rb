@@ -7,7 +7,6 @@ module ActionView
       method_name = self.method_name
       code = @handler.call(self)
 
-      # binding.pry if virtual_path == "posts/_form"
       # Make sure that the resulting String to be eval'd is in the
       # encoding of the code
       source = <<-end_src
@@ -16,14 +15,6 @@ module ActionView
           _old_virtual_path, @virtual_path = @virtual_path, #{@virtual_path.inspect};_old_output_buffer = @output_buffer;#{locals_code};#{code}
         ensure
           @virtual_path, @output_buffer = _old_virtual_path, _old_output_buffer
-        end
-
-        def method_missing(name, *args, &block)
-          if local = @local_assigns[name]
-            local
-          else
-            super
-          end
         end
       end_src
 
