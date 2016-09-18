@@ -104,20 +104,29 @@ And my approach is to use `method_missing`. I will monkey-patching the `ActionVi
     ensure
       @virtual_path, @output_buffer = _old_virtual_path, _old_output_buffer
     end
-    
+  end_src
+```
+And monkey-patching the `ActionView::Base#method_missing`
+
+```ruby
+module ActionView
+  module MethodMissing
     def method_missing(name, *args, &block)
-      # When it hits method missing like calling `post`.
-      # Let it check the instance variable we stored first
-      if local = @local_assigns[name]
+      if @local_assigns && local = @local_assigns[name]
         local
       else
         super
       end
     end
-  end_src
+  end
+
+  class Base
+    include MethodMissing
+  end
+end
 ```
 
-This method solves the method_missing part. So now we can change the cache-key of template object:
+The above approach solves the method_missing part. So now we can change the cache-key of template object:
 ```ruby
 module ActionView
   # = Action View Resolver
