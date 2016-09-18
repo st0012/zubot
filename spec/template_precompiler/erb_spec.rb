@@ -13,7 +13,7 @@ describe Zubot::TemplatePrecompiler do
     it "compiles one template" do
       subject.compile_templates!
 
-      expect(subject.compiled_count).to eq(3)
+      expect(subject.compiled_count).to eq(4)
     end
   end
 
@@ -29,6 +29,14 @@ describe Zubot::TemplatePrecompiler do
       # Shouldn't be compile while rendering
       expect_any_instance_of(ActionView::Template).not_to receive(:compile)
       view.render(template: "index", prefixes: "posts")
+    end
+    it "compiles erb template with namespaces (users)" do
+      file_path = implicit_file_path("posts/users/index.html.erb")
+      subject.compile_template(file_path, resolver)
+
+      # Shouldn't be compile while rendering
+      expect_any_instance_of(ActionView::Template).not_to receive(:compile)
+      view.render(template: "index", prefixes: "posts/users")
     end
     it "compiles partial" do
       template_path = implicit_file_path("posts/show.html.erb")
@@ -50,7 +58,9 @@ describe Zubot::TemplatePrecompiler do
     end
 
     it "returns right values" do
-      args = subject.send(:template_args, template_path)
+      resolver = view_paths.first
+      resolver_path = resolver.instance_variable_get(:@path)
+      args = subject.send(:template_args, template_path, resolver_path)
       expect(args[0]).to eq("index")
       expect(args[1]).to eq("posts")
       expect(args[2]).to be_falsey

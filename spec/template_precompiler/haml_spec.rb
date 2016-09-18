@@ -17,7 +17,7 @@ describe Zubot::TemplatePrecompiler do
       subject.compile_templates!
 
       # In this case it will compile .erb file as well.
-      expect(subject.compiled_count).to eq(6)
+      expect(subject.compiled_count).to eq(7)
     end
   end
 
@@ -54,7 +54,9 @@ describe Zubot::TemplatePrecompiler do
     end
 
     it "returns right values" do
-      args = subject.send(:template_args, template_path)
+      resolver = view_paths.first
+      resolver_path = resolver.instance_variable_get(:@path)
+      args = subject.send(:template_args, template_path, resolver_path)
       expect(args[0]).to eq("index")
       expect(args[1]).to eq("posts")
       expect(args[2]).to be_falsey

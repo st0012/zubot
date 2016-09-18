@@ -17,7 +17,8 @@ module Zubot
     def compile_templates!
       view_paths.each do |resolver|
         resolver_path = resolver.instance_variable_get(:@path)
-        template_paths = Dir.glob("#{resolver_path}/**/*.*")
+        template_files = File.join("#{resolver_path}", "**", "**", "*.*")
+        template_paths = Dir.glob(template_files)
         template_paths.each do |template_path|
           compile_template(template_path, resolver)
         end
@@ -27,7 +28,8 @@ module Zubot
     end
 
     def compile_template(template_path, resolver)
-      name, prefix, partial, details, key, local = template_args(template_path)
+      resolver_path = resolver.instance_variable_get(:@path)
+      name, prefix, partial, details, key, local = template_args(template_path, resolver_path)
 
       handler = get_handler(template_path)
       return unless handler.in?(details[:handlers])
@@ -50,14 +52,16 @@ module Zubot
       template_path.split("/").last.split(".").last.to_sym
     end
 
-    def template_args(template_path)
-      splited_path = template_path.split("/")
-      name = splited_path.last.split(".").first
-      prefix = splited_path[-2]
+    def template_args(template_path, resolver_path)
+      # This would be like ["", "posts", "show.html.erb"] for "/posts/show.html.erb"
+      virtual_path = template_path.sub(resolver_path, "").split("/")
+      filename = virtual_path[-1]
+      name = filename.split(".").first
+      prefix = virtual_path[1..-2].join("/")
       partial = name.start_with?("_")
       name.sub!(/\_/, "") if partial
 
-      format = splited_path.last.split(".")[1].to_sym
+      format = filename.split(".")[1].to_sym
       details = make_details(format)
 
       key = details_key.get(details)

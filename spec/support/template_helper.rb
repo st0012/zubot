@@ -13,7 +13,7 @@ module TemplateHelper
   end
 
   def fixture_load_path
-    File.join(File.dirname(__FILE__), "../", "fixtures", "templates")
+    File.join(File.expand_path('../../../', __FILE__), "spec", "fixtures", "templates")
   end
 
   def implicit_file_path(filename_with_prefix)
