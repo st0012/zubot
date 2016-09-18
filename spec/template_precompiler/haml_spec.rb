@@ -17,7 +17,7 @@ describe Zubot::TemplatePrecompiler do
       subject.compile_templates!
 
       # In this case it will compile .erb file as well.
-      expect(subject.compiled_count).to eq(4)
+      expect(subject.compiled_count).to eq(6)
     end
   end
 
@@ -33,6 +33,16 @@ describe Zubot::TemplatePrecompiler do
       # Shouldn't be compile while rendering
       expect_any_instance_of(ActionView::Template).not_to receive(:compile)
       view.render(template: "index", prefixes: "posts")
+    end
+    it "compiles partial" do
+      template_path = implicit_file_path("posts/show.html.haml")
+      partial_path = implicit_file_path("posts/_title.html.haml")
+      subject.compile_template(template_path, resolver)
+      subject.compile_template(partial_path, resolver)
+
+      # Shouldn't be compile while rendering
+      expect_any_instance_of(ActionView::Template).not_to receive(:compile)
+      view.render(template: "show", prefixes: "posts")
     end
   end
 

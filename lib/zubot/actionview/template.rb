@@ -1,5 +1,48 @@
 module ActionView
   class Template
     prepend Zubot::Helpers
+
+    def compile(mod) #:nodoc:
+      encode!
+      method_name = self.method_name
+      code = @handler.call(self)
+
+      # binding.pry if virtual_path == "posts/_form"
+      # Make sure that the resulting String to be eval'd is in the
+      # encoding of the code
+      source = <<-end_src
+        def #{method_name}(local_assigns, output_buffer)
+          @local_assigns = local_assigns
+          _old_virtual_path, @virtual_path = @virtual_path, #{@virtual_path.inspect};_old_output_buffer = @output_buffer;#{locals_code};#{code}
+        ensure
+          @virtual_path, @output_buffer = _old_virtual_path, _old_output_buffer
+        end
+
+        def method_missing(name, *args, &block)
+          if local = @local_assigns[name]
+            local
+          else
+            super
+          end
+        end
+      end_src
+
+      # Make sure the source is in the encoding of the returned code
+      source.force_encoding(code.encoding)
+
+      # In case we get back a String from a handler that is not in
+      # BINARY or the default_internal, encode it to the default_internal
+      source.encode!
+
+      # Now, validate that the source we got back from the template
+      # handler is valid in the default_internal. This is for handlers
+      # that handle encoding but screw up
+      unless source.valid_encoding?
+        raise WrongEncodingError.new(@source, Encoding.default_internal)
+      end
+
+      mod.module_eval(source, identifier, 0)
+      ObjectSpace.define_finalizer(self, Finalizer[method_name, mod])
+    end
   end
 end

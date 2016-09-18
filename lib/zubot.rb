@@ -2,7 +2,9 @@ require "zubot/version"
 require "zubot/engine"
 require "zubot/config"
 require "zubot/helpers"
+require "action_view"
 require "zubot/actionview/template"
+require "zubot/actionview/resolver"
 
 module Zubot
   class TemplatePrecompiler
