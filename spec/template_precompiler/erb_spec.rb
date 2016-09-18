@@ -13,7 +13,7 @@ describe Zubot::TemplatePrecompiler do
     it "compiles one template" do
       subject.compile_templates!
 
-      expect(subject.compiled_count).to eq(2)
+      expect(subject.compiled_count).to eq(3)
     end
   end
 
@@ -29,6 +29,16 @@ describe Zubot::TemplatePrecompiler do
       # Shouldn't be compile while rendering
       expect_any_instance_of(ActionView::Template).not_to receive(:compile)
       view.render(template: "index", prefixes: "posts")
+    end
+    it "compiles partial" do
+      template_path = implicit_file_path("posts/show.html.erb")
+      partial_path = implicit_file_path("posts/_title.html.erb")
+      subject.compile_template(template_path, resolver)
+      subject.compile_template(partial_path, resolver)
+
+      # Shouldn't be compile while rendering
+      expect_any_instance_of(ActionView::Template).not_to receive(:compile)
+      view.render(template: "show", prefixes: "posts")
     end
   end
 
