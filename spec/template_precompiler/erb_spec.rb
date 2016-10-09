@@ -48,6 +48,16 @@ describe Zubot::TemplatePrecompiler do
       expect_any_instance_of(ActionView::Template).not_to receive(:compile)
       view.render(template: "show", prefixes: "posts")
     end
+    it "doesn't mess partial's locals" do
+      partial_path = implicit_file_path("posts/_title.html.erb")
+      subject.compile_template(partial_path, resolver)
+
+      expect_any_instance_of(ActionView::Template).not_to receive(:compile)
+
+      result1 = view.render("posts/title", title: "Hello1" )
+      result2 = view.render("posts/title", title: "Hello2" )
+      expect(result1).not_to eq(result2)
+    end
   end
 
   describe "#template_args" do

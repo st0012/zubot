@@ -2,6 +2,10 @@ module ActionView
   class Template
     prepend Zubot::Helpers
 
+    def local_bindings(local_assigns)
+
+    end
+
     def compile(mod) #:nodoc:
       encode!
       method_name = self.method_name
@@ -12,6 +16,17 @@ module ActionView
       source = <<-end_src
         def #{method_name}(local_assigns, output_buffer)
           @local_assigns = local_assigns
+
+          local_assigns.each_key do |key|
+            unless methods.include?(key)
+              source = <<-inner_source
+                def \#{key}
+                  @local_assigns[:\#{key}]
+                end
+              inner_source
+              self.instance_eval(source)
+            end
+          end
           _old_virtual_path, @virtual_path = @virtual_path, #{@virtual_path.inspect};_old_output_buffer = @output_buffer;#{locals_code};#{code}
         ensure
           @virtual_path, @output_buffer = _old_virtual_path, _old_output_buffer
