@@ -91,65 +91,32 @@ Futhermore, the locals we get when compiling templates looks like `["post", "use
 
 So the requirement for an ideal solution is to remove locals from cache key (or even the entire template finding process), and make sure that Rails can still find out where to get the locals when rendering partials.
 
-And my approach is to use `method_missing`. I will monkey-patching the `ActionView::Template#compile` method's `source` part:
+And my approach is to create binding method on the fly. I will monkey-patching the `ActionView::Template#compile` method's `source` part:
 
 ```ruby
   source = <<-end_src
     def #{method_name}(local_assigns, output_buffer)
-      # Assigns local to instance variable
       @local_assigns = local_assigns
-      
-       # Actually we might not need the locals_code here anymore
+
+      local_assigns.each_key do |key|
+        unless methods.include?(key)
+          source = <<-inner_source
+            def \#{key}
+              @local_assigns[:\#{key}]
+            end
+          inner_source
+          self.instance_eval(source)
+        end
+      end
       _old_virtual_path, @virtual_path = @virtual_path, #{@virtual_path.inspect};_old_output_buffer = @output_buffer;#{locals_code};#{code}
     ensure
       @virtual_path, @output_buffer = _old_virtual_path, _old_output_buffer
     end
   end_src
 ```
-And monkey-patching the `ActionView::Base#method_missing`
 
-```ruby
-module ActionView
-  module MethodMissing
-    def method_missing(name, *args, &block)
-      if @local_assigns && local = @local_assigns[name]
-        local
-      else
-        super
-      end
-    end
-  end
+When the source method was called, we store given local_assigns (say `{ title: "Hello" }`) into the instance variable. And then create a binding method `title` if there's no `title` method. So Rails can use the `title` method to access the local assigns.
 
-  class Base
-    include MethodMissing
-  end
-end
-```
-
-The above approach solves the method_missing part. So now we can change the cache-key of template object:
-```ruby
-module ActionView
-  # = Action View Resolver
-  class Resolver
-    def cached(key, path_info, details, locals) #:nodoc:
-      name, prefix, partial = path_info
-      locals = locals.map(&:to_s).sort!
-
-      if key
-        # We can remove the locals from the cache method
-        # But I just using empty array for now
-        @cache.cache(key, name, prefix, partial, []) do
-          decorate(yield, path_info, details, locals)
-        end
-      else
-        decorate(yield, path_info, details, locals)
-      end
-    end
-  end
-end
-```
-
-However, I am not sure if this approach would have a huge impact on performance since it uses `method_missing`.
 
 ## Development
 
