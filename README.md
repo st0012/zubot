@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/st0012/zubot.svg?branch=master)](https://travis-ci.org/st0012/zubot)
+
 # Zubot
 
 Zubot precompiles every templates under your application and rails enginge's app/views folder into ruby code during boot time. The benefit and reason of doing this can be found  [here](https://github.com/railsgsoc/ideas/wiki/2016-Ideas#eager-load-action-view-templates).
