@@ -1,9 +1,21 @@
 module ActionView
+  class Base
+    def local_codes(locals)
+      locals = locals.to_set - Module::DELEGATION_RESERVED_METHOD_NAMES
+      locals = locals.grep(/\A(?![A-Z0-9])(?:[[:alnum:]_]|[^\0-\177])+\z/)
+      locals.each_with_object("") { |key, code| code << "#{key} = #{key} = local_assigns[:#{key}];" }
+    end
+  end
+
   class Template
     prepend Zubot::Helpers
 
-    def local_bindings(local_assigns)
-
+    def view_method_body(code)
+      <<-src
+        _old_virtual_path, @virtual_path = @virtual_path, #{@virtual_path.inspect};_old_output_buffer = @output_buffer;#{code}
+        ensure
+          @virtual_path, @output_buffer = _old_virtual_path, _old_output_buffer
+      src
     end
 
     def compile(mod) #:nodoc:
@@ -15,21 +27,22 @@ module ActionView
       # encoding of the code
       source = <<-end_src
         def #{method_name}(local_assigns, output_buffer)
-          @local_assigns = local_assigns
+          if (methods & local_assigns.keys) == local_assigns.keys
+            _old_virtual_path, @virtual_path = @virtual_path, #{@virtual_path.inspect};_old_output_buffer = @output_buffer;#{code}
+          else
+            source = <<-inner_source
+              def \#{__method__}(local_assigns, output_buffer)
 
-          local_assigns.each_key do |key|
-            unless methods.include?(key)
-              source = <<-inner_source
-                def \#{key}
-                  @local_assigns[:\#{key}]
-                end
-              inner_source
-              self.instance_eval(source)
-            end
+                _old_virtual_path, @virtual_path = @virtual_path, #{@virtual_path.inspect};_old_output_buffer = @output_buffer;\#{local_codes(local_assigns.keys)};#{code}
+              ensure
+                @virtual_path, @output_buffer = _old_virtual_path, _old_output_buffer
+              end
+            inner_source
+            self.instance_eval(source)
+            self.send(__method__, local_assigns, output_buffer)
           end
-          _old_virtual_path, @virtual_path = @virtual_path, #{@virtual_path.inspect};_old_output_buffer = @output_buffer;#{locals_code};#{code}
         ensure
-          @virtual_path, @output_buffer = _old_virtual_path, _old_output_buffer
+          @virtual_path, @output_buffer = _old_virtual_path, _old_output_buffer if _old_virtual_path || _old_output_buffer
         end
       end_src
 
