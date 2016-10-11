@@ -17,7 +17,7 @@ describe Zubot::TemplatePrecompiler do
       subject.compile_templates!
 
       # In this case it will compile .erb file as well.
-      expect(subject.compiled_count).to eq(7)
+      expect(subject.compiled_count).to eq(10)
     end
   end
 
