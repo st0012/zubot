@@ -13,7 +13,7 @@ describe Zubot::TemplatePrecompiler do
     it "compiles one template" do
       subject.compile_templates!
 
-      expect(subject.compiled_count).to eq(4)
+      expect(subject.compiled_count).to eq(7)
     end
   end
 
@@ -57,6 +57,17 @@ describe Zubot::TemplatePrecompiler do
       result1 = view.render("posts/title", title: "Hello1" )
       result2 = view.render("posts/title", title: "Hello2" )
       expect(result1).not_to eq(result2)
+    end
+    it "renders nested partial" do
+      templates = ["posts/double_partial.html.erb", "posts/_double_partial_one.html.erb", "posts/_double_partial_two.html.erb"]
+      templates.each do |template|
+        subject.compile_template(implicit_file_path(template), resolver)
+      end
+
+      expect_any_instance_of(ActionView::Template).not_to receive(:compile)
+
+      result = view.render(template: "posts/double_partial", prefix: "posts")
+      expect(result).to eq("Partial1:\n<br>\n\nPartial2: Hello World\n\n\n")
     end
   end
 
