@@ -91,33 +91,7 @@ Futhermore, the locals we get when compiling templates looks like `["post", "use
 
 ### The Solution
 
-So the requirement for an ideal solution is to remove locals from cache key (or even the entire template finding process), and make sure that Rails can still find out where to get the locals when rendering partials.
-
-And my approach is to create binding method on the fly. I will monkey-patching the `ActionView::Template#compile` method's `source` part:
-
-```ruby
-  source = <<-end_src
-    def #{method_name}(local_assigns, output_buffer)
-      @local_assigns = local_assigns
-
-      local_assigns.each_key do |key|
-        unless methods.include?(key)
-          source = <<-inner_source
-            def \#{key}
-              @local_assigns[:\#{key}]
-            end
-          inner_source
-          self.instance_eval(source)
-        end
-      end
-      _old_virtual_path, @virtual_path = @virtual_path, #{@virtual_path.inspect};_old_output_buffer = @output_buffer;#{locals_code};#{code}
-    ensure
-      @virtual_path, @output_buffer = _old_virtual_path, _old_output_buffer
-    end
-  end_src
-```
-
-When the source method was called, we store given local_assigns (say `{ title: "Hello" }`) into the instance variable. And then create a binding method `title` if there's no `title` method. So Rails can use the `title` method to access the local assigns.
+**I haven't had time to write down my current appoach, but I will update it on readme ASAP. Basically I will recreate the view method at the first time it receives `local_assigns`, see [here](https://github.com/st0012/zubot/blob/master/lib/zubot/actionview/template.rb#L20) for more details**
 
 
 ## Development
