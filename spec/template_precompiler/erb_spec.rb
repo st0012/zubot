@@ -1,19 +1,21 @@
 require "spec_helper"
 
 describe Zubot::TemplatePrecompiler do
-  before do
-    allow(subject).to receive(:view_paths) { view_paths }
+  before :context do
+    subject = Zubot::TemplatePrecompiler.new
+    subject.view_paths = view_paths
+    subject.compile_templates!
   end
 
-  describe "#compile_templates!" do
-    before do
-      allow(subject).to receive(:view_paths) { view_paths }
-    end
+  subject do
+    precompiler = Zubot::TemplatePrecompiler.new
+    precompiler.view_paths = view_paths
+    precompiler
+  end
 
-    it "compiles templates" do
-      expect(subject).to receive(:compile_template).at_least(1)
-      subject.compile_templates!
-    end
+  before do
+    # Shouldn't be compile while rendering
+    expect_any_instance_of(ActionView::Template).not_to receive(:compile)
   end
 
   describe "#compile_template" do
@@ -22,87 +24,39 @@ describe Zubot::TemplatePrecompiler do
       allow(subject).to receive(:view) { ActionView::Base.new(view_paths, {}, nil, [:html]) }
     end
     it "compiles erb template" do
-      file_path = implicit_file_path("posts/index.html.erb")
-      subject.compile_template(file_path, resolver)
-
-      # Shouldn't be compile while rendering
-      expect_any_instance_of(ActionView::Template).not_to receive(:compile)
       view.render(template: "index", prefixes: "posts")
     end
     it "compiles erb template with namespaces (users)" do
-      file_path = implicit_file_path("posts/users/index.html.erb")
-      subject.compile_template(file_path, resolver)
-
-      # Shouldn't be compile while rendering
-      expect_any_instance_of(ActionView::Template).not_to receive(:compile)
       view.render(template: "index", prefixes: "posts/users")
     end
     it "compiles partial" do
-      template_path = implicit_file_path("posts/show.html.erb")
-      partial_path = implicit_file_path("posts/_title.html.erb")
-      subject.compile_template(template_path, resolver)
-      subject.compile_template(partial_path, resolver)
-
-      # Shouldn't be compile while rendering
-      expect_any_instance_of(ActionView::Template).not_to receive(:compile)
       view.render(template: "show", prefixes: "posts")
     end
     it "doesn't mess partial's locals" do
-      partial_path = implicit_file_path("posts/_title.html.erb")
-      subject.compile_template(partial_path, resolver)
-
-      expect_any_instance_of(ActionView::Template).not_to receive(:compile)
-
       result1 = view.render("posts/title", title: "Hello1" )
       result2 = view.render("posts/title", title: "Hello2" )
       expect(result1).not_to eq(result2)
     end
     it "renders nested partial" do
-      templates = ["posts/double_partial.html.erb", "posts/_double_partial_one.html.erb", "posts/_double_partial_two.html.erb"]
-      templates.each do |template|
-        subject.compile_template(implicit_file_path(template), resolver)
-      end
-
-      expect_any_instance_of(ActionView::Template).not_to receive(:compile)
-
       result = view.render(template: "posts/double_partial")
       expect(result).to eq("Partial1:\n<br>\n\nPartial2: Hello World\n\n\n")
     end
     it "compiles templates with script" do
-      subject.compile_template(implicit_file_path("posts/with_scripts/show.html.erb"), resolver)
-      subject.compile_template(implicit_file_path("posts/with_scripts/_title.html.erb"), resolver)
-      expect_any_instance_of(ActionView::Template).not_to receive(:compile)
-
       result = view.render(template: "posts/with_scripts/show")
       expect(result).to eq("Hello\n<script type='text/javascript'></script>\n\n")
     end
     it "compiles templates with layout" do
-      subject.compile_template(implicit_file_path("posts/index.html.erb"), resolver)
-      subject.compile_template(implicit_file_path("layouts/application.html.erb"), resolver)
-
-      expect_any_instance_of(ActionView::Template).not_to receive(:compile)
-
       result = view.render(template: "posts/index", layout: "layouts/application")
       expect(result).to eq("<header>\n</header>\n  <p>Hello World!</p>\n\n<footer>\n</footer>\n")
     end
 
     context "when user checks local in partials" do
       it "returns \"Test\" instead of \"hello world\" in pattern 1" do
-        subject.compile_template(implicit_file_path("posts/local_check/pattern1.html.erb"), resolver)
-        subject.compile_template(implicit_file_path("posts/local_check/_pattern1_partial.html.erb"), resolver)
-
-        expect_any_instance_of(ActionView::Template).not_to receive(:compile)
-
         result = view.render(template: "posts/local_check/pattern1")
 
         expect(result).to eq("<h1>Test</h1>\n\n")
       end
       it "returns \"Test\" instead of \"hello world\" in pattern 2" do
-        subject.compile_template(implicit_file_path("posts/local_check/pattern2.html.erb"), resolver)
-        subject.compile_template(implicit_file_path("posts/local_check/_pattern2_partial.html.erb"), resolver)
-
-        expect_any_instance_of(ActionView::Template).not_to receive(:compile)
-
         result = view.render(template: "posts/local_check/pattern2")
 
         expect(result).to eq("<h1>Test</h1>\n\n")

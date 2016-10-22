@@ -2,21 +2,23 @@ require "spec_helper"
 require "action_view/template"
 
 describe Zubot::TemplatePrecompiler do
-  before do
+  before :context do
     require "haml"
     require "haml/template"
-    allow(subject).to receive(:view_paths) { view_paths }
+    subject = Zubot::TemplatePrecompiler.new
+    subject.view_paths = view_paths
+    subject.compile_templates!
   end
 
-  describe "#compile_templates!" do
-    before do
-      allow(subject).to receive(:view_paths) { view_paths }
-    end
+  subject do
+    precompiler = Zubot::TemplatePrecompiler.new
+    precompiler.view_paths = view_paths
+    precompiler
+  end
 
-    it "compiles templates" do
-      expect(subject).to receive(:compile_template).at_least(1)
-      subject.compile_templates!
-    end
+  before do
+    # Shouldn't be compile while rendering
+    expect_any_instance_of(ActionView::Template).not_to receive(:compile)
   end
 
   describe "#compile_template" do
@@ -25,21 +27,9 @@ describe Zubot::TemplatePrecompiler do
       allow(subject).to receive(:view) { ActionView::Base.new(view_paths, {}, nil, [:html]) }
     end
     it "compiles haml template" do
-      file_path = implicit_file_path("posts/index.html.haml")
-      subject.compile_template(file_path, resolver)
-
-      # Shouldn't be compile while rendering
-      expect_any_instance_of(ActionView::Template).not_to receive(:compile)
       view.render(template: "index", prefixes: "posts")
     end
     it "compiles partial" do
-      template_path = implicit_file_path("posts/show.html.haml")
-      partial_path = implicit_file_path("posts/_title.html.haml")
-      subject.compile_template(template_path, resolver)
-      subject.compile_template(partial_path, resolver)
-
-      # Shouldn't be compile while rendering
-      expect_any_instance_of(ActionView::Template).not_to receive(:compile)
       view.render(template: "show", prefixes: "posts")
     end
   end

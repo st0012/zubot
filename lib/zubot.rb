@@ -10,6 +10,7 @@ require "zubot/kaminari/helpers/paginator"
 module Zubot
   class TemplatePrecompiler
     attr_reader :compiled_count
+    attr_writer :view_paths
 
     def initialize
       @compiled_count = 0
@@ -71,7 +72,7 @@ module Zubot
     end
 
     def view_paths
-      ActionController::Base._view_paths
+      @view_paths ||= ActionController::Base._view_paths
     end
 
     def view
