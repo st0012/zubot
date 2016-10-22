@@ -74,13 +74,39 @@ describe Zubot::TemplatePrecompiler do
       expect_any_instance_of(ActionView::Template).not_to receive(:compile)
 
       result = view.render(template: "posts/with_scripts/show")
+      expect(result).to eq("Hello\n<script type='text/javascript'></script>\n\n")
     end
     it "compiles templates with layout" do
-      subject.compile_template(implicit_file_path("posts/show.html.erb"), resolver)
+      subject.compile_template(implicit_file_path("posts/index.html.erb"), resolver)
       subject.compile_template(implicit_file_path("layouts/application.html.erb"), resolver)
 
-      result = view.render(template: "posts/show", layout: "layouts/application")
-      expect(result).to eq("<header>\n</header>\n  Hello\n\n\n<footer>\n</footer>\n")
+      expect_any_instance_of(ActionView::Template).not_to receive(:compile)
+
+      result = view.render(template: "posts/index", layout: "layouts/application")
+      expect(result).to eq("<header>\n</header>\n  <p>Hello World!</p>\n\n<footer>\n</footer>\n")
+    end
+
+    context "when user checks local in partials" do
+      it "returns \"Test\" instead of \"hello world\" in pattern 1" do
+        subject.compile_template(implicit_file_path("posts/local_check/pattern1.html.erb"), resolver)
+        subject.compile_template(implicit_file_path("posts/local_check/_pattern1_partial.html.erb"), resolver)
+
+        expect_any_instance_of(ActionView::Template).not_to receive(:compile)
+
+        result = view.render(template: "posts/local_check/pattern1")
+
+        expect(result).to eq("<h1>Test</h1>\n\n")
+      end
+      it "returns \"Test\" instead of \"hello world\" in pattern 2" do
+        subject.compile_template(implicit_file_path("posts/local_check/pattern2.html.erb"), resolver)
+        subject.compile_template(implicit_file_path("posts/local_check/_pattern2_partial.html.erb"), resolver)
+
+        expect_any_instance_of(ActionView::Template).not_to receive(:compile)
+
+        result = view.render(template: "posts/local_check/pattern2")
+
+        expect(result).to eq("<h1>Test</h1>\n\n")
+      end
     end
   end
 
