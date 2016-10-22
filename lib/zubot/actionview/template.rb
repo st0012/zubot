@@ -22,6 +22,7 @@ module ActionView
       encode!
       method_name = self.method_name
       code = @handler.call(self)
+      mod.instance_variable_set("@#{method_name}_code", code)
 
       # Make sure that the resulting String to be eval'd is in the
       # encoding of the code
@@ -33,7 +34,7 @@ module ActionView
             source = <<-inner_source
               def \#{__method__}(local_assigns, output_buffer)
 
-                _old_virtual_path, @virtual_path = @virtual_path, #{@virtual_path.inspect};_old_output_buffer = @output_buffer;\#{local_codes(local_assigns.keys)};#{code}
+                _old_virtual_path, @virtual_path = @virtual_path, #{@virtual_path.inspect};_old_output_buffer = @output_buffer;\#{local_codes(local_assigns.keys)};\#{#{mod}.instance_variable_get("@#{method_name}_code")}
               ensure
                 @virtual_path, @output_buffer = _old_virtual_path, _old_output_buffer
               end
