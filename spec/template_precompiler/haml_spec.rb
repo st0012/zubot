@@ -13,11 +13,9 @@ describe Zubot::TemplatePrecompiler do
       allow(subject).to receive(:view_paths) { view_paths }
     end
 
-    it "compiles one template" do
+    it "compiles templates" do
+      expect(subject).to receive(:compile_template).at_least(1)
       subject.compile_templates!
-
-      # In this case it will compile .erb file as well.
-      expect(subject.compiled_count).to eq(10)
     end
   end
 
