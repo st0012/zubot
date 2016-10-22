@@ -1,7 +1,14 @@
 module ActionView
   class Base
+    DELEGATION_RESERVED_METHOD_NAMES = Set.new(
+      %w(_ arg args alias and BEGIN begin block break case class def defined? do
+      else elsif END end ensure false for if in module next nil not or redo
+      rescue retry return self super then true undef unless until when while
+      yield)
+    ).freeze
+
     def local_codes(locals)
-      locals = locals.to_set - Module::DELEGATION_RESERVED_METHOD_NAMES
+      locals = locals.to_set - DELEGATION_RESERVED_METHOD_NAMES
       locals = locals.grep(/\A(?![A-Z0-9])(?:[[:alnum:]_]|[^\0-\177])+\z/)
       locals.each_with_object("") { |key, code| code << "#{key} = #{key} = local_assigns[:#{key}];" }
     end
@@ -9,14 +16,6 @@ module ActionView
 
   class Template
     prepend Zubot::Helpers
-
-    def view_method_body(code)
-      <<-src
-        _old_virtual_path, @virtual_path = @virtual_path, #{@virtual_path.inspect};_old_output_buffer = @output_buffer;#{code}
-        ensure
-          @virtual_path, @output_buffer = _old_virtual_path, _old_output_buffer
-      src
-    end
 
     def compile(mod) #:nodoc:
       encode!
