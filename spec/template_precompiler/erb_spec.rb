@@ -66,8 +66,22 @@ describe Zubot::TemplatePrecompiler do
 
       expect_any_instance_of(ActionView::Template).not_to receive(:compile)
 
-      result = view.render(template: "posts/double_partial", prefix: "posts")
+      result = view.render(template: "posts/double_partial")
       expect(result).to eq("Partial1:\n<br>\n\nPartial2: Hello World\n\n\n")
+    end
+    it "compiles templates with script" do
+      subject.compile_template(implicit_file_path("posts/with_scripts/show.html.erb"), resolver)
+      subject.compile_template(implicit_file_path("posts/with_scripts/_title.html.erb"), resolver)
+      expect_any_instance_of(ActionView::Template).not_to receive(:compile)
+
+      result = view.render(template: "posts/with_scripts/show")
+    end
+    it "compiles templates with layout" do
+      subject.compile_template(implicit_file_path("posts/show.html.erb"), resolver)
+      subject.compile_template(implicit_file_path("layouts/application.html.erb"), resolver)
+
+      result = view.render(template: "posts/show", layout: "layouts/application")
+      expect(result).to eq("<header>\n</header>\n  Hello\n\n\n<footer>\n</footer>\n")
     end
   end
 
