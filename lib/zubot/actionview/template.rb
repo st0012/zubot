@@ -21,24 +21,41 @@ module ActionView
       encode!
       method_name = self.method_name
       code = @handler.call(self)
+      # This ensure the code string remains didn't get transfered in the method's second definition process.
+      # For example, assume we have code like
+      # ```
+      # "append='<script type=\\'text/javascript\\'></script>'
+      # ```
+      # Than interpolate it in the inner_source below will make it transfered to
+      # ```
+      # "append='<script type='text/javascript'></script>'
+      # ```
+      #
+      # And we will get syntax error when we execute that code.
       mod.instance_variable_set("@#{method_name}_code", code)
 
       # Make sure that the resulting String to be eval'd is in the
       # encoding of the code
       source = <<-end_src
         def #{method_name}(local_assigns, output_buffer)
+          # If we already has local codes defined, skip method recreation.
           if (methods & local_assigns.keys) == local_assigns.keys
             _old_virtual_path, @virtual_path = @virtual_path, #{@virtual_path.inspect};_old_output_buffer = @output_buffer;#{code}
           else
             source = <<-inner_source
               def \#{__method__}(local_assigns, output_buffer)
 
-                _old_virtual_path, @virtual_path = @virtual_path, #{@virtual_path.inspect};_old_output_buffer = @output_buffer;\#{local_codes(local_assigns.keys)};\#{#{mod}.instance_variable_get("@#{method_name}_code")}
+                _old_virtual_path, @virtual_path = @virtual_path, #{@virtual_path.inspect};_old_output_buffer = @output_buffer
+                # recreate the method with local codes.
+                \#{local_codes(local_assigns.keys)}
+                # retrieve the template code from instance variable and set it to nil.
+                \#{#{mod}.instance_variable_get("@#{method_name}_code")}
+                \#{#{mod}.instance_variable_set("@#{method_name}_code", nil)}
               ensure
                 @virtual_path, @output_buffer = _old_virtual_path, _old_output_buffer
               end
             inner_source
-            self.instance_eval(source)
+            #{mod}.module_eval(source)
             self.send(__method__, local_assigns, output_buffer)
           end
         ensure
