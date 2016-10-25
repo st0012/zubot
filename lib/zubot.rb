@@ -8,6 +8,9 @@ require "zubot/actionview/resolver"
 require "zubot/kaminari/helpers/paginator"
 
 module Zubot
+  mattr_accessor :view_codes
+  self.view_codes = {}
+
   class TemplatePrecompiler
     attr_reader :compiled_count
     attr_writer :view_paths
