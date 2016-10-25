@@ -32,7 +32,7 @@ module ActionView
       # ```
       #
       # And we will get syntax error when we execute that code.
-      mod.instance_variable_set("@#{method_name}_code", code)
+      Zubot.view_codes["#{method_name}_code".to_sym] = code
 
       # Make sure that the resulting String to be eval'd is in the
       # encoding of the code
@@ -49,8 +49,7 @@ module ActionView
                 # recreate the method with local codes.
                 \#{local_codes(local_assigns.keys)}
                 # retrieve the template code from instance variable and set it to nil.
-                \#{#{mod}.instance_variable_get("@#{method_name}_code")}
-                \#{#{mod}.instance_variable_set("@#{method_name}_code", nil)}
+                \#{Zubot.view_codes.delete(:#{method_name}_code)}
               ensure
                 @virtual_path, @output_buffer = _old_virtual_path, _old_output_buffer
               end
