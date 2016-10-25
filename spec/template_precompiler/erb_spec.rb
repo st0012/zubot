@@ -7,22 +7,15 @@ describe Zubot::TemplatePrecompiler do
     subject.compile_templates!
   end
 
-  subject do
-    precompiler = Zubot::TemplatePrecompiler.new
-    precompiler.view_paths = view_paths
-    precompiler
-  end
-
   before do
+    allow_any_instance_of(Zubot::TemplatePrecompiler).to receive(:view) { view }
     # Shouldn't be compile while rendering
     expect_any_instance_of(ActionView::Template).not_to receive(:compile)
   end
 
   describe "#compile_template" do
     let(:resolver) { view_paths.first }
-    before do
-      allow(subject).to receive(:view) { ActionView::Base.new(view_paths, {}, nil, [:html]) }
-    end
+
     it "compiles erb template" do
       view.render(template: "index", prefixes: "posts")
     end
