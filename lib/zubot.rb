@@ -5,7 +5,6 @@ require "zubot/helpers"
 require "action_view"
 require "zubot/actionview/template"
 require "zubot/actionview/resolver"
-require "zubot/kaminari/helpers/paginator"
 
 module Zubot
   mattr_accessor :view_codes
