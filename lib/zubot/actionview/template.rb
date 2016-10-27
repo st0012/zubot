@@ -39,7 +39,7 @@ module ActionView
       source = <<-end_src
         def #{method_name}(local_assigns, output_buffer)
           # If we already has local codes defined, skip method recreation.
-          if (methods & local_assigns.keys) == local_assigns.keys
+          if no_locals_required = (methods & local_assigns.keys) == local_assigns.keys
             _old_virtual_path, @virtual_path = @virtual_path, #{@virtual_path.inspect};_old_output_buffer = @output_buffer;#{code}
           else
             source = <<-inner_source
@@ -58,7 +58,7 @@ module ActionView
             self.send(__method__, local_assigns, output_buffer)
           end
         ensure
-          @virtual_path, @output_buffer = _old_virtual_path, _old_output_buffer if _old_virtual_path || _old_output_buffer
+          @virtual_path, @output_buffer = _old_virtual_path, _old_output_buffer if no_locals_required
         end
       end_src
 
