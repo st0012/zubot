@@ -7,3 +7,5 @@ require "support/template_helper"
 RSpec.configure do |config|
   config.include TemplateHelper
 end
+
+Zubot.enabled = true

@@ -1,10 +1,11 @@
 require "zubot/version"
-require "zubot/engine"
+require "rails"
 require "zubot/config"
 require "zubot/helpers"
 require "action_view"
 require "zubot/actionview/template"
 require "zubot/actionview/resolver"
+require "zubot/engine"
 
 module Zubot
   mattr_accessor :view_codes

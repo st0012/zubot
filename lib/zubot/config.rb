@@ -1,7 +1,6 @@
 module Zubot
-  class << self
-    attr_accessor :debug_mode
-  end
+  mattr_accessor :debug_mode, :enabled
 
-  self.debug_mode = Rails.env.development?
+  self.debug_mode = false
+  self.enabled = false
 end

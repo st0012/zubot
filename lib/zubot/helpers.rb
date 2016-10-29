@@ -1,7 +1,7 @@
 module Zubot
   module Helpers
     def compile!(view)
-      display_compile_result(@compiled)
+      display_compile_result(@compiled) if Zubot.debug_mode
       super
     end
 
