@@ -55,7 +55,10 @@ module ActionView
               end
             inner_source
             #{mod}.module_eval(source)
-            self.send(__method__, local_assigns, output_buffer)
+
+            # Capture the outter block
+            p = Proc.new
+            self.send(__method__, local_assigns, output_buffer, &p)
           end
         ensure
           @virtual_path, @output_buffer = _old_virtual_path, _old_output_buffer if no_locals_required
