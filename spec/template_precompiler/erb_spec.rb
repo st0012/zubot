@@ -42,6 +42,10 @@ describe Zubot::TemplatePrecompiler do
       result = view.render(template: "posts/index", layout: "layouts/application")
       expect(result).to eq("<header>\n</header>\n  <p>Hello World!</p>\n\n<footer>\n</footer>\n")
     end
+    it "compiles templates with layout and content_for" do
+      result = view.render(template: "posts/content_for/show", layout: "layouts/content_for/application")
+      expect(result).to eq("<head>\n    <meta name=\"theme-color\" content=\"#1A1918\">\n\n</head>\n\n\nThis is post.\n\n<footer>This is footer</footer>\n")
+    end
 
     context "when user checks local in partials" do
       it "returns \"Test\" instead of \"hello world\" in pattern 1" do
