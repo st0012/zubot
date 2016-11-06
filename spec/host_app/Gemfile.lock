@@ -19,7 +19,7 @@ GIT
 PATH
   remote: ../../../zubot
   specs:
-    zubot (0.1.0)
+    zubot (0.2.0)
       rails (>= 4.2)
 
 GEM
@@ -201,4 +201,4 @@ DEPENDENCIES
   zubot!
 
 BUNDLED WITH
-   1.11.2
+   1.12.5
